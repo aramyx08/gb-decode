@@ -15,8 +15,8 @@ import org.firstinspires.ftc.teamcode.utilities.TelemetryDebug;
 
 import java.util.List;
 
-@TeleOp (name = "Testing Blue TeleOp")
-public class BlueTeleOp extends OpMode {
+@TeleOp (name = "Demo TeleOp (Blue)")
+public class DemoTeleOp extends OpMode {
     private Follower follower;
     private Intake intake;
     private Kicker kicker;
@@ -26,6 +26,7 @@ public class BlueTeleOp extends OpMode {
 
     @Override
     public void init() {
+        // Sets Bulk Reading to auto
         List<LynxModule> hubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule hub : hubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
@@ -41,6 +42,8 @@ public class BlueTeleOp extends OpMode {
         turret = new Turret(hardwareMap, false, debug);
         shooter = new Shooter(hardwareMap, false, debug);
     }
+
+    @Override
     public void start() {
         follower.startTeleOpDrive();
     }
