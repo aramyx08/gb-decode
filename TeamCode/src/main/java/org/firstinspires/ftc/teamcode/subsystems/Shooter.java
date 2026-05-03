@@ -1,12 +1,11 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.seattlesolvers.solverslib.controller.PIDFController;
-import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
-import com.seattlesolvers.solverslib.hardware.motors.MotorGroup;
-import com.seattlesolvers.solverslib.hardware.servos.ServoEx;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.utilities.TelemetryDebug;
 
@@ -19,10 +18,9 @@ import org.firstinspires.ftc.teamcode.utilities.TelemetryDebug;
  * </p>
  */
 public class Shooter {
-    private MotorEx topFlywheelMotor;
-    private MotorEx bottomFlywheelMotor;
-    private MotorGroup flywheel;
-    private ServoEx pitchServo;
+    private DcMotorEx topFlywheelMotor;
+    private DcMotorEx bottomFlywheelMotor;
+    private Servo pitchServo;
     private Limelight3A limelight;
     private TelemetryDebug debug;
     private double filteredTa;
@@ -38,23 +36,16 @@ public class Shooter {
      */
     public Shooter (HardwareMap hardwareMap, boolean isRed, TelemetryDebug debug) {
         // Initialize Motors
-        topFlywheelMotor = new MotorEx(hardwareMap, "topMotor", 28, 6000);
-        bottomFlywheelMotor = new MotorEx(hardwareMap, "bottomMotor", 28, 6000);
+        topFlywheelMotor = hardwareMap.get(DcMotorEx.class, "launcher0");
+        topFlywheelMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
-        // Set caching tolerance to decrease motor commands
-        topFlywheelMotor.setCachingTolerance(0.01);
-        bottomFlywheelMotor.setCachingTolerance(0.01);
+        bottomFlywheelMotor = hardwareMap.get(DcMotorEx.class, "launcher1");
 
-        // Group and set behavior for both motors
-        flywheel = new MotorGroup(topFlywheelMotor, bottomFlywheelMotor);
-        flywheel.setZeroPowerBehavior(MotorEx.ZeroPowerBehavior.FLOAT);
-        flywheel.setRunMode(MotorEx.RunMode.RawPower);
-
-        pitchServo = new ServoEx(hardwareMap, "pitchServo");
+        pitchServo = hardwareMap.get(Servo.class, "elevationServo");
 
         // Initialize Limelight and change pipeline based on alliance
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(isRed ? 0 : 1);
+        limelight.pipelineSwitch(isRed ? 1 : 0);
         limelight.start();
 
         // Needed for custom debugging class
@@ -80,14 +71,19 @@ public class Shooter {
 
         if (result.isValid()) {
             // Collect and low pass filter Ta
-            filteredTa = filteredTa == 0 ? result.getTa() : (0.6 * result.getTa()) + (0.4 * filteredTa);
+//            filteredTa = filteredTa == 0 ? result.getTa() : (0.6 * result.getTa()) + (0.4 * filteredTa);
+
+            filteredTa = result.getTa();
 
             // Calculate RPM and pitch values
-            double currentRPM = toRPM(flywheel.getCorrectedVelocity());
-            double targetRPM = 0; // TODO: Calculate linear regression (e.g targetRPM = -2.7 * filteredTa + 1800)
+            double currentRPM = toRPM(topFlywheelMotor.getVelocity());
+            double targetRPM =  // TODO: Calculate linear regression (e.g targetRPM = -2.7 * filteredTa + 1800)
+            3574.97926*(Math.pow(filteredTa, -0.156948));
             double power = velocityController.calculate(currentRPM, targetRPM);
 
-            double targetPitch = 0; // TODO: Calculate linear regression (e.g targetPitch = 1.4 * filteredTa - 1.73)
+            double targetPitch =  // TODO: Calculate linear regression (e.g targetPitch = 1.4 * filteredTa - 1.73)
+            (-0.0475945*(filteredTa*filteredTa))+(0.11103*filteredTa)+0.387717;
+
 
             // Telemetry
             debug.createWatcher("Ta", filteredTa);
@@ -97,10 +93,12 @@ public class Shooter {
             debug.createWatcher("Target Pitch", targetPitch);
 
             // Set calculated values
-            flywheel.set(power);
-            pitchServo.set(targetPitch);
+            topFlywheelMotor.setPower(power);
+            bottomFlywheelMotor.setPower(power);
+            pitchServo.setPosition(Math.min(targetPitch, 0.7));
         } else {
-            flywheel.set(0);
+            topFlywheelMotor.setPower(0);
+            bottomFlywheelMotor.setPower(0);
         }
     }
 
@@ -110,7 +108,8 @@ public class Shooter {
      */
     public void idle () {
         limelight.pause();
-        flywheel.set(0);
+        topFlywheelMotor.setPower(0);
+        bottomFlywheelMotor.setPower(0);
     }
 
     private double toRPM(double ticksPerSecond) {

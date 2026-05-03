@@ -62,7 +62,7 @@ public class DemoTeleOp extends OpMode {
             );
         }
 
-        if (gamepad1.left_trigger_pressed) {
+        if (gamepad1.left_trigger > 0.1) {
             intake.intake();
         } else {intake.idle();}
 
@@ -74,7 +74,7 @@ public class DemoTeleOp extends OpMode {
             turret.idle();
         }
 
-        if (gamepad1.right_trigger_pressed) {
+        if (gamepad1.right_trigger > 0.1) {
             kicker.startSequence();
         }
 

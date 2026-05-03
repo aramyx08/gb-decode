@@ -1,20 +1,22 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.seattlesolvers.solverslib.hardware.motors.MotorEx;
+
 
 public class Intake {
-    MotorEx intakeMotor;
+    DcMotor intakeMotor;
 
     public Intake (HardwareMap hardwareMap) {
-        intakeMotor = new MotorEx(hardwareMap, "intakeMotor");
+        intakeMotor = hardwareMap.get(DcMotor.class, "intake");
     }
 
     public void intake () {
-        intakeMotor.set(1);
+        intakeMotor.setPower(1);
     }
 
     public void idle () {
-        intakeMotor.set(0);
+        intakeMotor.setPower(0);
     }
 }

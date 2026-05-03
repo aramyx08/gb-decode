@@ -39,14 +39,17 @@ repositories {
     maven {
         url = "https://repo.dairy.foundation/releases"
     }
+    // Dairy snapshots repository
+    maven {
+        url = "https://repo.dairy.foundation/snapshots"
+    }
 }
 
 dependencies {
     implementation project(':FtcRobotController')
-//    implementation 'org.ftclib.ftclib:core:2.1.1'
-    implementation "org.solverslib:core:0.3.4" // core
-    implementation "org.solverslib:pedroPathing:0.3.4" // pedroPathing
-    implementation("dev.frozenmilk.sinister:Sloth:0.2.4")
-    implementation("com.bylazar.sloth:fullpanels:0.2.4+1.0.12")
+    implementation 'org.ftclib.ftclib:core:2.1.1'
+//    implementation("dev.frozenmilk.dairy:Core:2.2.4")
+//    implementation("com.bylazar.sloth:fullpanels:0.2.\    `4+1.0.12")
+
 
 }

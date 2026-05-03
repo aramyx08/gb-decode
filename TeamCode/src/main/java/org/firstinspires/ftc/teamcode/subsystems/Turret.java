@@ -1,12 +1,10 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.seattlesolvers.solverslib.controller.PIDFController;
-import com.seattlesolvers.solverslib.hardware.motors.CRServoEx;
-import com.seattlesolvers.solverslib.hardware.motors.CRServoGroup;
 
 import org.firstinspires.ftc.teamcode.utilities.TelemetryDebug;
 
@@ -18,13 +16,13 @@ import org.firstinspires.ftc.teamcode.utilities.TelemetryDebug;
  * </p>
  */
 public class Turret {
-    private CRServoEx leftTurretServo;
-    private CRServoEx rightTurretServo;
-    private CRServoGroup turret;
+    private CRServo leftTurretServo;
+    private CRServo rightTurretServo;
+//    private CRServoEx turret;
     private Limelight3A limelight;
     private TelemetryDebug debug;
 
-    final PIDFController limelightPIDF = new PIDFController(0.012, 0.014, 0.00015, 0.005); // These values should work fine
+    final PIDFController limelightPIDF = new PIDFController(0.009, 0.014, 0.0003 , 0.0); // These values should work fine
 
     /**
      * Constructs a new Turret subsystem.
@@ -34,15 +32,23 @@ public class Turret {
      */
     public Turret (HardwareMap hardwareMap, boolean isRed, TelemetryDebug debug) {
         // Initialize Servos
-        leftTurretServo = new CRServoEx(hardwareMap, "leftTurretServo");
-        rightTurretServo = new CRServoEx(hardwareMap, "rightTurretServo");
+//        leftTurretServo = new CRServoEx(hardwareMap, "azimuthServo0");
+//        turret = new CRServoEx(hardwareMap, "azimuthServo1");
+
+        leftTurretServo = hardwareMap.get(CRServo.class, "azimuthServo0");
+        rightTurretServo = hardwareMap.get(CRServo.class, "azimuthServo1");
+
+        leftTurretServo.setDirection(CRServo.Direction.REVERSE);
+        rightTurretServo.setDirection(CRServo.Direction.REVERSE);
+
+
 
         // Groups servos into controllable group
-        turret = new CRServoGroup(leftTurretServo, rightTurretServo);
+//        turret = new CRServoGroup(leftTurretServo, rightTurretServo);
 
         // Initialize Limelight and change pipeline based on alliance
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(isRed ? 0 : 1);
+        limelight.pipelineSwitch(isRed ? 1 : 0);
         limelight.start();
 
         // Needed for custom debugging class
@@ -65,15 +71,17 @@ public class Turret {
         if (result != null && result.isValid()) {
             // Calculate and safely limit target power based on Tx
             double power = limelightPIDF.calculate(result.getTx(), 0);
-            power = Math.max(-0.7, Math.min(0.7, power));
+            power = Math.max(-0.6, Math.min(0.6, power));
 
             // Telemetry
             debug.createWatcher("Tx", result.getTx());
             debug.createWatcher("Turret Power", power);
 
-            turret.set(power);
+            rightTurretServo.setPower(power);
+            leftTurretServo.setPower(power);
         } else {
-            turret.set(0);
+            rightTurretServo.setPower(0);
+            leftTurretServo.setPower(0);
         }
     }
 
@@ -82,7 +90,8 @@ public class Turret {
      * Stops servo movement and pauses Limelight to reduce processing overhead.
      */
     public void idle() {
-        turret.set(0);
+        rightTurretServo.setPower(0);
+        leftTurretServo.setPower(0);
         limelight.pause();
     }
 }
