@@ -30,11 +30,12 @@ public class Shooter {
 
     /**
      * Constructs a new Shooter subsystem.
+     *
      * @param hardwareMap The hardware map to retrieve motor, servo, and camera devices.
      * @param isRed       Boolean to determine the alliance; sets Limelight pipeline to 0 (Red) or 1 (Blue).
      * @param debug       Instance of TelemetryDebug for real-time data logging.
      */
-    public Shooter (HardwareMap hardwareMap, boolean isRed, TelemetryDebug debug) {
+    public Shooter(HardwareMap hardwareMap, boolean isRed, TelemetryDebug debug) {
         // Initialize Motors
         topFlywheelMotor = hardwareMap.get(DcMotorEx.class, "launcher0");
         topFlywheelMotor.setDirection(DcMotorEx.Direction.REVERSE);
@@ -77,12 +78,10 @@ public class Shooter {
 
             // Calculate RPM and pitch values
             double currentRPM = toRPM(topFlywheelMotor.getVelocity());
-            double targetRPM =  // TODO: Calculate linear regression (e.g targetRPM = -2.7 * filteredTa + 1800)
-            3574.97926*(Math.pow(filteredTa, -0.156948));
+            double targetRPM = 3574.97926 * (Math.pow(filteredTa, -0.156948));
             double power = velocityController.calculate(currentRPM, targetRPM);
 
-            double targetPitch =  // TODO: Calculate linear regression (e.g targetPitch = 1.4 * filteredTa - 1.73)
-            (-0.0475945*(filteredTa*filteredTa))+(0.11103*filteredTa)+0.387717;
+            double targetPitch = (-0.0475945 * (filteredTa * filteredTa)) + (0.11103 * filteredTa) + 0.387717;
 
 
             // Telemetry
@@ -102,11 +101,32 @@ public class Shooter {
         }
     }
 
+    public void accelerate(double Ta) {
+        // Calculate RPM and pitch values
+        double currentRPM = toRPM(topFlywheelMotor.getVelocity());
+        double targetRPM = 3574.97926 * (Math.pow(Ta, -0.156948));
+        double power = velocityController.calculate(currentRPM, targetRPM);
+
+        double targetPitch = (-0.0475945 * (Ta * Ta)) + (0.11103 * Ta) + 0.387717;
+
+        // Telemetry
+        debug.createWatcher("Ta", filteredTa);
+        debug.createWatcher("Target RPM", targetRPM);
+        debug.createWatcher("Flywheel Power", power);
+        debug.createWatcher("Error", targetRPM - currentRPM);
+        debug.createWatcher("Target Pitch", targetPitch);
+
+        // Set calculated values
+        topFlywheelMotor.setPower(power);
+        bottomFlywheelMotor.setPower(power);
+        pitchServo.setPosition(Math.min(targetPitch, 0.7));
+    }
+
     /**
      * Shuts down the shooter subsystem.
      * Pauses the Limelight sensor and cuts power to the flywheel motors.
      */
-    public void idle () {
+    public void idle() {
         limelight.pause();
         topFlywheelMotor.setPower(0);
         bottomFlywheelMotor.setPower(0);
